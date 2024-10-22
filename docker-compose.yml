@@ -4,7 +4,4 @@ services:
     command: bash start.sh
     restart: on-failure
     ports:
-      - "80:80"
-      - "8080:8080"
-      - "8070:8070"
-      - "8090:8090"
+      - "66:66"

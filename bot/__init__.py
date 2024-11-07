@@ -431,11 +431,11 @@ if ospath.exists("shorteners.txt"):
             if len(temp) == 2:
                 shorteners_list.append({"domain": temp[0], "api_key": temp[1]})
 
-PORT = environ.get("PORT")
-Popen(
-    f"gunicorn web.wserver:app --bind 0.0.0.0:{PORT} --worker-class gevent",
-    shell=True,
-)
+if BASE_URL:
+    Popen(
+        f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent",
+        shell=True,
+    )
 
 srun(["xnox", "-d", "--profile=."], check=False)
 if not ospath.exists(".netrc"):
@@ -469,8 +469,6 @@ if ospath.exists("accounts.zip"):
     osremove("accounts.zip")
 if not ospath.exists("accounts"):
     config_dict["USE_SERVICE_ACCOUNTS"] = False
-alive = Popen(["python3", "alive.py"])
-sleep(0.5)
 
 aria2 = API(ariaClient(host="http://localhost", port=6800, secret=""))
 

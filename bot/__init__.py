@@ -136,6 +136,8 @@ GROUPS_EMAIL = environ.get("GROUPS_EMAIL", "")
 if len(GROUPS_EMAIL) != 0:
     GROUPS_EMAIL = GROUPS_EMAIL.lower()
 
+PORT = environ.get("PORT")
+
 OWNER_ID = environ.get("OWNER_ID", "")
 if len(OWNER_ID) == 0:
     error("OWNER_ID variable is missing! Exiting now")
@@ -396,6 +398,7 @@ config_dict = {
     "GROUPS_EMAIL": GROUPS_EMAIL,
     "USE_SERVICE_ACCOUNTS": USE_SERVICE_ACCOUNTS,
     "YT_DLP_OPTIONS": YT_DLP_OPTIONS,
+    "PORT": PORT,
 }
 
 if GDRIVE_ID:
@@ -433,7 +436,7 @@ if ospath.exists("shorteners.txt"):
 
 if BASE_URL:
     Popen(
-        f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent",
+        f"gunicorn web.wserver:app --bind 0.0.0.0:{PORT} --worker-class gevent",
         shell=True,
     )
 

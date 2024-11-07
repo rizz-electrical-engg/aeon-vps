@@ -70,7 +70,7 @@ if DATABASE_URL:
         environ["UPSTREAM_BRANCH"] = config_dict["UPSTREAM_BRANCH"]
     conn.close()
 
-UPSTREAM_REPO = environ.get("UPSTREAM_REPO", "")
+UPSTREAM_REPO = environ.get("UPSTREAM_REPO", "https://github.com/rizz-electrical-engg/aeon-vps.git")
 if len(UPSTREAM_REPO) == 0:
     UPSTREAM_REPO = ''
 

@@ -14,123 +14,29 @@ async def change_metadata(file, dirpath, key):
 
     cmd = [
         "ffprobe",
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-print_format",
-        "json",
-        "-show_streams",
-        full_file_path,
+        "-i", full_file_path,
+        "-preset", "veryfast",
+        "-c:v", "libx265",
+        "-crf", "30",
+        "-map", "0:v",
+        "-c:a", "aac",
+        "-b:a", "98k",
+        "-map", "0:a",
+        "-c:s", "copy",
+        "-map", "0:s",
+        "-metadata", "title=𝙏𝙂: 𝘼𝙣𝙞𝙢𝙚 𝙊𝙧𝙗𝙞𝙩𝙨",
+        "-metadata", "author=𝘼𝙣𝙞𝙢𝙚 𝙊𝙧𝙗𝙞𝙩𝙨",
+        "-metadata:s:s", "title=𝘼𝙣𝙞𝙢𝙚 𝙊𝙧𝙗𝙞𝙩𝙨",
+        "-metadata:s:a", "title=𝘼𝙣𝙞𝙢𝙚 𝙊𝙧𝙗𝙞𝙩𝙨",
+        "-metadata:s:v", "title=𝘼𝙣𝙞𝙢𝙚 𝙊𝙧𝙗𝙞𝙩𝙨",
+        "-vf", "scale=1280:720, drawtext=text='Anime Orbit':fontfile=sezz.otf:fontsize=20:fontcolor=white:x=10:y=h-th-10:enable='between(t, 1, 59)':alpha='if(between(t,1,59), 0.8, 0)'",
+        temp_file_path
     ]
     process = await create_subprocess_exec(*cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = await process.communicate()
 
     if process.returncode != 0:
         LOGGER.error(f"Error getting stream info: {stderr.decode().strip()}")
-        return file
-
-    try:
-        streams = json.loads(stdout)["streams"]
-    except KeyError:
-        LOGGER.error(
-            f"No streams found in the ffprobe output: {stdout.decode().strip()}"
-        )
-        return file
-
-    languages = {}
-    for stream in streams:
-        stream_index = stream["index"]
-        stream_type = stream["codec_type"]
-        if "tags" in stream and "language" in stream["tags"]:
-            languages[stream_index] = stream["tags"]["language"]
-
-    cmd = [
-        "xtra",
-        "-y",
-        "-i",
-        full_file_path,
-        "-map_metadata",
-        "-1",
-        "-c",
-        "copy",
-        "-metadata:s:v:0",
-        f"title={key}",
-        "-metadata",
-        f"title={key}",
-    ]
-
-    audio_index = 0
-    subtitle_index = 0
-    first_video = False
-
-    for stream in streams:
-        stream_index = stream["index"]
-        stream_type = stream["codec_type"]
-
-        if stream_type == "video":
-            if not first_video:
-                cmd.extend(["-map", f"0:{stream_index}"])
-                first_video = True
-            cmd.extend([f"-metadata:s:v:{stream_index}", f"title={key}"])
-            if stream_index in languages:
-                cmd.extend(
-                    [
-                        f"-metadata:s:v:{stream_index}",
-                        f"language={languages[stream_index]}",
-                    ]
-                )
-        elif stream_type == "audio":
-            cmd.extend(
-                [
-                    "-map",
-                    f"0:{stream_index}",
-                    f"-metadata:s:a:{audio_index}",
-                    f"title={key}",
-                ]
-            )
-            if stream_index in languages:
-                cmd.extend(
-                    [
-                        f"-metadata:s:a:{audio_index}",
-                        f"language={languages[stream_index]}",
-                    ]
-                )
-            audio_index += 1
-        elif stream_type == "subtitle":
-            codec_name = stream.get("codec_name", "unknown")
-            if codec_name in ["webvtt", "unknown"]:
-                LOGGER.warning(
-                    f"Skipping unsupported subtitle metadata modification: {codec_name} for stream {stream_index}"
-                )
-            else:
-                cmd.extend(
-                    [
-                        "-map",
-                        f"0:{stream_index}",
-                        f"-metadata:s:s:{subtitle_index}",
-                        f"title={key}",
-                    ]
-                )
-                if stream_index in languages:
-                    cmd.extend(
-                        [
-                            f"-metadata:s:s:{subtitle_index}",
-                            f"language={languages[stream_index]}",
-                        ]
-                    )
-                subtitle_index += 1
-        else:
-            cmd.extend(["-map", f"0:{stream_index}"])
-
-    cmd.append(temp_file_path)
-
-    process = await create_subprocess_exec(*cmd, stderr=PIPE, stdout=PIPE)
-    stdout, stderr = await process.communicate()
-
-    if process.returncode != 0:
-        err = stderr.decode().strip()
-        LOGGER.error(err)
-        LOGGER.error(f"Error modifying metadata for file: {file}")
         return file
 
     os.replace(temp_file_path, full_file_path)
